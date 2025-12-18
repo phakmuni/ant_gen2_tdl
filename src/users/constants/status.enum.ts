@@ -1,7 +1,8 @@
 
 
 export enum StatusEnum {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVE',
-  REJECT = "REJECT"
+  ACTIVATED = 'ACTIVATED',
+  // BANNED = 'BANNED',
+  DEACTIVATED = "DEACTIVATED"
 }
+

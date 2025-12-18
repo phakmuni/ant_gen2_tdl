@@ -8,7 +8,8 @@ import { UserService } from './users.service';
 import { QueryUserDto } from './dto/query-user.dto';
 import { RequestChangeStatusDto } from './dto/request-change-status.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
-import { CreateAlumniDto } from './dto/create-alumni.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+// import { CreateAlumniDto } from './dto/create-alumni.dto';
 
 @Controller('users')
 export class UsersController {
@@ -42,14 +43,21 @@ export class UsersController {
     /** 
      * * Create user account
      */
-    @Post("/alumni") @UseGuards(JwtAuthGuard, RolesGuard) @Roles(RoleEnum.ADMIN) @SuccessMessage("Change user status successful.")
-    createAlumni (@Body() dto : CreateAlumniDto) {
-        return this.userService.createAlumni(dto);
-    }
+    // @Post("/alumni/stu") @UseGuards(JwtAuthGuard, RolesGuard) @Roles(RoleEnum.ADMIN) @SuccessMessage("Change user status successful.")
+    // createAlumni (@Body() dto : CreateAlumniDto) {
+    //     return this.userService.createAlumni(dto);
+    // }
 
-    @Post() @UseGuards(JwtAuthGuard, RolesGuard) @Roles(RoleEnum.ADMIN) @SuccessMessage("Change user status successful.")
-    create (@Body() dto : CreateAdminDto) {
+    // @Post() @UseGuards(JwtAuthGuard, RolesGuard) @Roles(RoleEnum.ADMIN) @SuccessMessage("Create user successful.")
+    // create (@Body() dto : CreateAdminDto) {
+    //     return this.userService.create(dto);
+    // }
+
+    @Post() @UseGuards(JwtAuthGuard, RolesGuard) @Roles(RoleEnum.ADMIN) @SuccessMessage("Create user successful.")
+    create (@Body() dto : CreateUserDto) {
         return this.userService.create(dto);
     }
+
+    
 
 }

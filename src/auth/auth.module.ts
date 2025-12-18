@@ -1,4 +1,4 @@
-import { Generation } from 'src/generation/entities/generation.entity';
+// import { Generation } from 'src/generation/entities/generation.entity';
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -15,8 +15,8 @@ import { UsersModule } from 'src/users/users.module';
 import { diskStorage } from 'multer';
 import { MulterModule } from '@nestjs/platform-express';
 import { extname } from 'path';
-import { AlumniProfile } from 'src/alumni-profile/entities/alumni-profile.entity';
-import { Department } from 'src/department/entities/department.entity';
+// import { AlumniProfile } from 'src/alumni-profile/entities/alumni-profile.entity';
+// import { Department } from 'src/department/entities/department.entity';
 import { ResetPasswordToken } from 'src/reset-password-token/entities/reset-password-token.entity';
 import { EmailVerificationToken } from 'src/email-verification-token/entities/email-verification-token.entity';
 
@@ -25,7 +25,7 @@ import { EmailVerificationToken } from 'src/email-verification-token/entities/em
     ConfigModule,
     TokensModule,
     UsersModule,
-    TypeOrmModule.forFeature([User, Role, AlumniProfile, Department, Generation, ResetPasswordToken, EmailVerificationToken]),
+    TypeOrmModule.forFeature([User, Role, ResetPasswordToken, EmailVerificationToken]),
     OtpsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TokensModule } from './tokens/tokens.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
-import { AlumniProfileModule } from './alumni-profile/alumni-profile.module';
+// import { AlumniProfileModule } from './alumni-profile/alumni-profile.module';
 import { AuthModule } from './auth/auth.module';
 import { OtpsModule } from './otps/otps.module';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -11,10 +11,11 @@ import { typeOrmConfigAsync } from './configs/typeorm.config';
 import * as Joi from "joi";
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from '@nestjs/config';
-import { GenerationModule } from './generation/generation.module';
-import { DepartmentModule } from './department/department.module';
+// import { GenerationModule } from './generation/generation.module';
+// import { DepartmentModule } from './department/department.module';
 import { ResetPasswordTokenModule } from './reset-password-token/reset-password-token.module';
 import { EmailVerificationTokenModule } from './email-verification-token/email-verification-token.module';
+import { NotesModule } from './notes/notes.module';
 
 @Module({
   imports: [
@@ -51,7 +52,7 @@ import { EmailVerificationTokenModule } from './email-verification-token/email-v
         SECRET_KEY: Joi.string().required(),
       })
     }),
-    UsersModule, TokensModule, RolesModule, RolesModule, AlumniProfileModule, AuthModule, OtpsModule, GenerationModule, DepartmentModule, ResetPasswordTokenModule, EmailVerificationTokenModule
+    UsersModule, TokensModule, RolesModule, AuthModule, OtpsModule, ResetPasswordTokenModule, EmailVerificationTokenModule, NotesModule
   ],
   controllers: [],
   providers: [],

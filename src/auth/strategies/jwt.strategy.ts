@@ -39,7 +39,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid email or password.');
     }
     if(!user.isVerifyEmail) throw new UnauthorizedException("User with this email haven't verify yet.")
-    if(user.profile.status == StatusEnum.REJECT) throw new UnauthorizedException("This account found suspicious, and got reject by admin.")
+    if(user.status == StatusEnum.DEACTIVATED) throw new UnauthorizedException("User account has been deactivated.")
+    // if(user.profile.status == StatusEnum.REJECT) throw new UnauthorizedException("This account found suspicious, and got reject by admin.")
     return user;
   }
 }

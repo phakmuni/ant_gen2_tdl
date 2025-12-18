@@ -31,11 +31,11 @@ export class RequestRegisterDto {
     @Match('password', { message: 'Passwords do not match' })
     confirmPassword: string;
 
-    @IsNotEmpty({ message: 'Generation ID is required.' })
-    @IsNumber({}, { message: 'Generation ID must be a number.' })
-    generationId: number;
+    // @IsNotEmpty({ message: 'Generation ID is required.' })
+    // @IsNumber({}, { message: 'Generation ID must be a number.' })
+    // generationId: number;
 
-    @IsNotEmpty({ message: 'Department ID is required.' })
-    @IsNumber({}, { message: 'Department ID must be a number.' })
-    departmentId: number;
+    // @IsNotEmpty({ message: 'Department ID is required.' })
+    // @IsNumber({}, { message: 'Department ID must be a number.' })
+    // departmentId: number;
 }

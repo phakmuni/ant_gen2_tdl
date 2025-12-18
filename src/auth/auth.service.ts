@@ -14,9 +14,6 @@ import { plainToInstance } from 'class-transformer';
 import { RequestRegisterDto } from './dto/request-register.dto';
 import { RoleEnum } from 'src/roles/constants/role.enum';
 import { ResponseRegisterDto } from './dto/response-register.dto';
-import { AlumniProfile } from 'src/alumni-profile/entities/alumni-profile.entity';
-import { Department } from 'src/department/entities/department.entity';
-import { Generation } from 'src/generation/entities/generation.entity';
 import { StatusEnum } from 'src/users/constants/status.enum';
 import * as path from 'path';
 import { ResponseUserDto } from 'src/users/dto/response-user.dto';
@@ -38,9 +35,9 @@ export class AuthService {
     constructor(
         @InjectRepository(User) private readonly userRepo: Repository<User>,
         @InjectRepository(Role) private readonly roleRepo: Repository<Role>,
-        @InjectRepository(AlumniProfile) private readonly apRepo: Repository<AlumniProfile>,
-        @InjectRepository(Department) private readonly dRepo: Repository<Department>,
-        @InjectRepository(Generation) private readonly gRepo: Repository<Generation>,
+        // @InjectRepository(AlumniProfile) private readonly apRepo: Repository<AlumniProfile>,
+        // @InjectRepository(Department) private readonly dRepo: Repository<Department>,
+        // @InjectRepository(Generation) private readonly gRepo: Repository<Generation>,
         @InjectRepository(ResetPasswordToken) private readonly rsptRepo: Repository<ResetPasswordToken>,
         @InjectRepository(EmailVerificationToken) private readonly eftRepo: Repository<EmailVerificationToken>,
         private readonly tokenService: TokenService,
@@ -95,25 +92,12 @@ export class AuthService {
             throw new InternalServerErrorException("USER role missing.");
         });
 
-        // Validate department
-        const existingDept = await this.dRepo.findOneOrFail({
-            where: { id: dto.departmentId },
-        }).catch(() => {
-            throw new NotFoundException("Department was not found.");
-        });
-
-        // Validate generation by ID
-        const existingGen = await this.gRepo.findOneOrFail({
-            where: { department: { id: dto.departmentId },id: dto.generationId },
-        }).catch(() => {
-            throw new NotFoundException("Generation was not found.");
-        });
-
         // Hash password
         const hashedPassword = await bcrypt.hash(dto.password, 10);
 
         // Create user
         const user = this.userRepo.create({
+            fullname:dto.fullname,
             email: dto.email,
             password: hashedPassword,
             role,
@@ -122,37 +106,26 @@ export class AuthService {
 
         const savedUser = await this.userRepo.save(user);
 
-        // Create alumni profile
-        const profile = this.apRepo.create({
-            fullname: dto.fullname,
-            user: savedUser,
-            department: existingDept,
-            generation: existingGen,
-            status: StatusEnum.PENDING
-        });
-
-        await this.apRepo.save(profile);
-        
         return plainToInstance(
             ResponseRegisterDto,
-            { ...savedUser, profile },
+            savedUser,
             { excludeExtraneousValues: true }
         );
-    }
 
+    }
 
     public async updateAvatar(id: number, file: Express.Multer.File) {
         const user = await this.userRepo.findOne({ where: { id } });
         if (!user) throw new NotFoundException('User was not found');
 
         // Remove old avatar if exists
-        if (user.profile.avatar && user.profile.avatar != "default-avatar.png") {
-            const oldPath = path.join(__dirname, '..', '..', 'uploads', 'avatars', user.profile.avatar);
+        if (user.avatar && user.avatar != "default-avatar.png") {
+            const oldPath = path.join(__dirname, '..', '..', 'uploads', 'avatars', user.avatar);
             if (fs.existsSync(oldPath)) {
                 fs.unlinkSync(oldPath); // Delete old file
             }
         }
-        user.profile.avatar = file.filename;
+        user.avatar = file.filename;
         return plainToInstance(ResponseUserDto, await this.userRepo.save(user), {excludeExtraneousValues: true});
     }
 
@@ -161,23 +134,23 @@ export class AuthService {
         if (!user) throw new NotFoundException('User not found');
 
         // Remove old avatar if exists
-        if (user.profile.avatar) {
-            if(user.profile.avatar == "default-avatar.png") throw new BadRequestException("Default avatar cannot delete.")
-            const oldPath = path.join(__dirname, '..', '..', 'uploads', 'avatars', user.profile.avatar);
+        if (user.avatar) {
+            if(user.avatar == "default-avatar.png") throw new BadRequestException("Default avatar cannot delete.")
+            const oldPath = path.join(__dirname, '..', '..', 'uploads', 'avatars', user.avatar);
             if (fs.existsSync(oldPath)) {
                 fs.unlinkSync(oldPath);
             }
         }
-        user.profile.avatar = "default-avatar.png";
+        user.avatar = "default-avatar.png";
         return plainToInstance(ResponseUserDto, await this.userRepo.save(user), {excludeExtraneousValues: true});
     }
 
 
     public async profile(user: User) {
-        const load = await this.apRepo.findOneOrFail({where: {user: {id: user.id}}}).catch(() => { throw new NotFoundException("User profile not found.") });
-        user.profile = load;
-        const result = plainToInstance(ResponseUserDto, user, {excludeExtraneousValues: true});
-        result.profile.generation = load.generation
+        const profile = await this.userRepo.findOneOrFail({where: {id: user.id}}).catch(() => { throw new NotFoundException("User profile not found.") });
+        // user.profile = load;
+        const result = plainToInstance(ResponseUserDto, profile, {excludeExtraneousValues: true});
+        // result.profile.generation = load.generation
         return result;
     }
 
@@ -206,69 +179,18 @@ export class AuthService {
     // Inside your AuthService
 
     public async updateProfile(dto: UpdateUserProfileDto, user: User) {
-        
-        const departmentIdForValidation = dto.departmentId ?? user.profile.department?.id;
-        
-        // --- 1. Validation Checks ---
-        // Validate department existence
-        if(dto.departmentId && dto.departmentId !== user.profile.department?.id) {
-            if (!await this.dRepo.findOne({where: { id: dto.departmentId }})) {
-                throw new NotFoundException("Department was not found");
-            }
-        }
-        // Validate generation existence and check if it belongs to the current/new department
-        if(dto.generationId && dto.generationId !== user.profile.generation?.id) {
-            // Ensure there is a department context for validation
-            if (!departmentIdForValidation) {
-                throw new BadRequestException("Cannot update generation without a department context.");
-            }
-            // Find generation linked to the specific department ID
-            const generationFound = await this.gRepo.findOne({
-                where: { department: { id: departmentIdForValidation }, id: dto.generationId },
-            });
-
-            if (!generationFound) {
-                throw new NotFoundException("Generation was not found or does not belong to the specified department.");
-            }
-        }
-
-        // Validate phone uniqueness
-        if(dto.phone && dto.phone !== user.profile.phone) {
-            const phoneExists = await this.userRepo.exists({where: {profile: {phone: dto.phone}}});
-            if (phoneExists) {
-                throw new ConflictException("Phone number already in use.");
-            }
-        }
-
-        // --- 2. Prepare Partial Update Object for AlumniProfile ---
-        
-        // Create a partial object for the profile update
         const profileUpdate: any = {};
-        
-        // Map DTO fields to the update object only if they are provided (not undefined)
-        
         if (dto.fullname !== undefined) profileUpdate.fullname = dto.fullname;
-        if (dto.phone !== undefined) profileUpdate.phone = dto.phone;
-        if (dto.bio !== undefined) profileUpdate.bio = dto.bio; // Include missing fields from your DTO
-        if (dto.currentJob !== undefined) profileUpdate.currentJob = dto.currentJob; // Include missing fields
-
-        // Map relationships to lightweight entity stubs if IDs are provided
-        if (dto.departmentId !== undefined) profileUpdate.department = { id: dto.departmentId };
-        if (dto.generationId !== undefined) profileUpdate.generation = { id: dto.generationId };
-
-        // --- 3. Execute Update ---
-
-        // Use the profile repository (apRepo) to update the AlumniProfile directly.
-        // This is generally cleaner than saving the entire User entity just for a profile update.
-        await this.apRepo.update(user.profile.id, profileUpdate);
+        
+        await this.userRepo.update(user.id, profileUpdate);
         
         // --- 4. Fetch and Return Updated Data ---
 
         // Fetch the updated user data to return a fresh response
         const updatedUser = await this.userRepo.findOne({ 
-            where: { id: user.id },
+            where: { id: user.id }
             // Ensure relations are loaded for the ResponseUserDto
-            relations: ['profile', 'profile.department', 'profile.generation', 'role'] 
+            // relations: ['profile', 'profile.department', 'profile.generation', 'role'] 
         });
         
         return plainToInstance(ResponseUserDto, updatedUser, { excludeExtraneousValues: true });
@@ -341,7 +263,7 @@ export class AuthService {
 
         await this.sendResetPasswordEmail(
             user.email,
-            user.profile.fullname,
+            user.fullname,
             resetLink,
         );
         return [];
@@ -461,13 +383,11 @@ export class AuthService {
         const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
         const verifyLink = `${frontendUrl}/verify-change-email?token=${token}`;
 
-        const html = renderChangeEmailHtml(user.profile.fullname, newEmail, verifyLink);
+        const html = renderChangeEmailHtml(user.fullname, newEmail, verifyLink);
         await this.sendChangeEmailVerificationMail(newEmail, html);
 
         return { email: newEmail };
     }
-
-
 
     public async verifyChangeEmail(token: string) {
         const now = new Date();
@@ -490,10 +410,10 @@ export class AuthService {
         record.isUsed = true;
         await this.eftRepo.save(record);
 
-        console.log("=======================================");
-        console.log(record);
-        console.log(record.user);
-        console.log(record.user.tempEmail);
+        // console.log("=======================================");
+        // console.log(record);
+        // console.log(record.user);
+        // console.log(record.user.tempEmail);
 
         record.user.email = record.user.tempEmail || record.user.email;
         record.user.tempEmail = null;

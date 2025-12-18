@@ -1,14 +1,18 @@
-import { ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { Role } from 'src/roles/entities/role.entity';
 import { QueryUserDto } from './dto/query-user.dto';
+import * as bcrypt from 'bcrypt';
 import { CreateAdminDto } from './dto/create-admin.dto';
-import { CreateAlumniDto } from './dto/create-alumni.dto';
+// import { CreateAlumniDto } from './dto/create-alumni.dto';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { plainToInstance } from 'class-transformer';
 import { RequestChangeStatusDto } from './dto/request-change-status.dto';
+import { getPaginationMeta } from 'src/common/interfaces/paginated-response.interface';
+import { CreateUserDto } from './dto/create-user.dto';
+import { StatusEnum } from './constants/status.enum';
 
 @Injectable()
 export class UserService {
@@ -36,14 +40,13 @@ export class UserService {
                           'user.email',
                           'user.avatar',
                           'user.status',
-                          'user.phoneNumber',
-                          'user.telegramLink',
+                          
                           'user.createdAt',
                           'role.id',
                           'role.name',
                         ])
                         .skip(skip).take(_per_page);
-    if(search) queryBuilder.andWhere("(user.fullname LIKE :search OR user.email LIKE :search OR user.phoneNumber LIKE :search OR user.telegramLink LIKE :search)", {search: `%${search}%`});
+    if(search) queryBuilder.andWhere("(user.fullname LIKE :search OR user.email LIKE :search )", {search: `%${search}%`});
     if(sortBy && sortDir) queryBuilder.orderBy("user."+sortBy, sortDir);
     if(status) queryBuilder.andWhere("(user.status = :status)", {status: status})
     const [items, totalItems] = await queryBuilder.getManyAndCount();
@@ -57,15 +60,24 @@ export class UserService {
   public async changeStatus(id: number, dto: RequestChangeStatusDto): Promise<ResponseUserDto> {
       const user = await this.userRepo.findOneOrFail({where: {id}}).catch(() => {throw new NotFoundException("User was not found.")});
       if(user.id == 1) throw new ForbiddenException("Not allowed to make any action on default admin.");
-      if(dto.status) user.profile.status = dto.status;
+      if(dto.status) user.status = dto.status;
       return plainToInstance(ResponseUserDto, await this.userRepo.save(user), {excludeExtraneousValues: true});
   }
 
-  public async create(dto: CreateAdminDto) {
-    return plainToInstance(ResponseUserDto, await this.userRepo.save(toSave), {excludeExtraneousValues :true})
-  }
+  // public async create(dto: CreateAdminDto) {
+  //   return plainToInstance(ResponseUserDto, await this.userRepo.save(toSave), {excludeExtraneousValues :true})
+  // }
 
-  public async createAlumni(dto: CreateAlumniDto) {
+  // public async createAlumni(dto: CreateAlumniDto) {
+  //   return plainToInstance(ResponseUserDto, await this.userRepo.save(toSave), {excludeExtraneousValues :true})
+  // }
+  public async create(dto: CreateUserDto) {
+    if(await this.userRepo.exists({where: {email:dto.email}})) throw new ConflictException("Email already in used");
+    // if(await this.userRepo.exists({where: {phoneNumber:dto.phoneNumber}})) throw new ConflictException("Phone number already in used");
+    const role = await this.roleRepo.findOneOrFail({where: {id: dto.roleId}}).catch(() => {throw new NotFoundException("Role was not found.")});
+    const toSave = this.userRepo.create({
+      ...dto, password: await bcrypt.hash(dto.password, 10), role, status: StatusEnum.ACTIVATED
+    });
     return plainToInstance(ResponseUserDto, await this.userRepo.save(toSave), {excludeExtraneousValues :true})
   }
 }

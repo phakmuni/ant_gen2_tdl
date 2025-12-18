@@ -42,26 +42,6 @@ export class CreateAdminDto {
     @Match('password', { message: 'Passwords do not match' })
     confirmPassword: string;
 
-    // --- Phone Number (Missing/Optional) ---
-    @IsOptional()
-    @Type(() => Number) // Convert incoming string/number to number type
-    @IsNumber({}, { message: 'Phone number must be a valid number.' })
-    phone?: number;
-
-    // --- Bio (Missing/Optional) ---
-    @IsOptional()
-    @IsString({ message: 'Bio must be a string.' })
-    @IsNotEmpty({ message: 'Bio cannot be an empty string if provided.' })
-    @MaxLength(500, { message: 'Bio must not exceed 500 characters.' })
-    bio?: string;
-
-    // --- Current Job (Missing/Optional) ---
-    @IsOptional()
-    @IsString({ message: 'Current job must be a string.' })
-    @IsNotEmpty({ message: 'Current job cannot be an empty string if provided.' })
-    @MaxLength(100, { message: 'Current job must not exceed 100 characters.' })
-    currentJob?: string;
-
     // --- Status (Missing/Optional) ---
     @IsOptional()
     @IsEnum(StatusEnum, {

@@ -6,7 +6,7 @@ import { renderRegisterOtpHtml } from 'src/utils/html/register.opt.html';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/users/entities/user.entity';
 import { StatusEnum } from 'src/users/constants/status.enum';
-import { AlumniProfile } from 'src/alumni-profile/entities/alumni-profile.entity';
+// import { AlumniProfile } from 'src/alumni-profile/entities/alumni-profile.entity';
 import { Otp } from './entities/otp.entity';
 
 @Injectable()
@@ -18,8 +18,8 @@ export class OtpsService {
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
 
-        @InjectRepository(AlumniProfile)
-        private readonly alumniRepo: Repository<AlumniProfile>
+        // @InjectRepository(AlumniProfile)
+        // private readonly alumniRepo: Repository<AlumniProfile>
     ) {}
 
     // ============================
@@ -27,8 +27,8 @@ export class OtpsService {
     // ============================
     async generateOtp(email: string) {
         const user = await this.userRepo.findOne({
-            where: { email },
-            relations: ['profile'],
+            where: { email }
+            // relations: ['profile'],
         });
 
         if (!user) throw new NotFoundException("User was not found.");
@@ -51,7 +51,7 @@ export class OtpsService {
 
         await this.otpRepo.save(otp);
 
-        await this.sendEmail(email, otpCode, user.profile.fullname);
+        await this.sendEmail(email, otpCode, user.fullname);
 
         return { __customMessage: "OTP sent to your email." };
     }
@@ -68,12 +68,16 @@ export class OtpsService {
             },
         });
 
-        await transporter.sendMail({
-            from: `"ANT" <${process.env.SMTP_MAIL}>`,
-            to: email,
-            subject: 'Your OTP Code',
-            html: renderRegisterOtpHtml(otpCode, fullname),
-        });
+        try {
+                await transporter.sendMail({
+                from: `"ANT" <${process.env.SMTP_MAIL}>`,
+                to: email,
+                subject: 'Your OTP Code',
+                html: renderRegisterOtpHtml(otpCode, fullname),
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     // ============================
@@ -95,8 +99,8 @@ export class OtpsService {
 
         // get user
         const user = await this.userRepo.findOne({
-            where: { email },
-            relations: ['profile'],
+            where: { email }
+            // relations: ['profile'],
         });
         if (!user) throw new NotFoundException("User not found.");
 
