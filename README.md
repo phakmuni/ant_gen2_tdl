@@ -82,10 +82,10 @@ SECRET_KEY=Your-secret-key
 
 
 #SMTP
-SMTP_HOST=smtp.mailersend.net
-SMTP_PORT=587
-SMTP_MAIL=MS_o1tX14@test-pzkmgq78yrnl059v.mlsender.net
-SMTP_PASSWORD=mssp.DpfddYs.x2p03471wdk4zdrn.XexvXdZ
+SMTP_HOST=host
+SMTP_PORT=you-smtp-port
+SMTP_MAIL=your-mail
+SMTP_PASSWORD=your-password
 
 # File validation
 MAX_REPORT_FILES=3
