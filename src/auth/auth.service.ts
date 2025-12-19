@@ -28,6 +28,7 @@ import { RequestResetPasswordDto } from './dto/request-reset-password.dto';
 import { RequestChangeEmailDto } from './dto/request-change-email.dto';
 import { renderChangeEmailHtml } from 'src/utils/html/change-email.html';
 import { EmailVerificationToken } from 'src/email-verification-token/entities/email-verification-token.entity';
+import { RequestDeleteAccountDto } from './dto/request-delete-account.dto';
 
 @Injectable()
 export class AuthService {
@@ -156,6 +157,15 @@ export class AuthService {
 
     public async logout (token: string) {
         await this.tokenService.deleteToken(token);
+        return [];
+    }
+
+    public async deleteAccount(user:User,dto:RequestDeleteAccountDto){
+        const isMatch = await bcrypt.compare(dto.password, user.password);
+        if (!isMatch) {
+            throw new BadRequestException('Invalid password.');
+        }
+        await this.userRepo.delete(user.id);
         return [];
     }
 

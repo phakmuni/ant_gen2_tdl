@@ -18,6 +18,7 @@ import { RequestChangePasswordDto } from './dto/request-change-password.dto';
 import { RequestResetPasswordDto } from './dto/request-reset-password.dto';
 import { RequestChangeEmailDto } from './dto/request-change-email.dto';
 import { Throttle } from '@nestjs/throttler';
+import { RequestDeleteAccountDto } from './dto/request-delete-account.dto';
 
 
 @Controller('auth')
@@ -162,6 +163,14 @@ export class AuthController {
     @SuccessMessage('Email updated successfully.')
         public async verifyChangeEmail(@Body('token') token: string) {
         return this.service.verifyChangeEmail(token);
+    }
+
+    @Post('/delete-account')
+    @SuccessMessage('Delete Account Successfully.!')
+    @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
+    public async RequestDeleteAccountDto(@Body() dto:RequestDeleteAccountDto,  @CurrentUser() user:User){
+        return this.service.deleteAccount(user,dto);
     }
 
 }
